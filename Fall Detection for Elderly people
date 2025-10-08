@@ -1,0 +1,39 @@
+DISCRIPTION:The Fall Detection System uses an accelerometer sensor (like MPU6050) to monitor the movement and orientation of an elderly person.
+If a sudden fall is detected, the NodeMCU/Arduino triggers an alert via buzzer or IoT app (Blynk/GSM) so caregivers can respond immediately.
+CODING:
+#include <Wire.h>
+#include <MPU6050.h>
+#include <ESP8266WiFi.h>
+#include <BlynkSimpleEsp8266.h>
+
+MPU6050 mpu;
+#define BLYNK_AUTH_TOKEN "YourAuthToken"
+char auth[] = BLYNK_AUTH_TOKEN;
+char ssid[] = "YourWiFi";
+char pass[] = "YourPassword";
+
+#define buzzer D2
+
+void setup() {
+  Serial.begin(115200);
+  Wire.begin();
+  mpu.initialize();
+  pinMode(buzzer, OUTPUT);
+  Blynk.begin(auth, ssid, pass);
+}
+
+void loop() {
+  Blynk.run();
+
+  int16_t ax, ay, az;
+  mpu.getAcceleration(&ax, &ay, &az);
+  
+  float totalAcc = sqrt(ax*ax + ay*ay + az*az)/16384.0; // Normalize
+  if (totalAcc > 2.5) {   // Threshold for fall
+    digitalWrite(buzzer, HIGH);
+    Blynk.notify("⚠️ Fall Detected!");
+    delay(3000);
+    digitalWrite(buzzer, LOW);
+  }
+  delay(500);
+}
